@@ -9,7 +9,6 @@ pipeline {
   }
 
   stages {
-<<<<<<< HEAD
 
     stage('Build Docker Images') {
       steps {
@@ -21,9 +20,6 @@ pipeline {
     }
 
     stage('Push Docker Images') {
-=======
-    stage('Docker Sanity Check') {
->>>>>>> 1f889973eb1219df18dfa25729d281da065f63f6
       steps {
         script {
           docker.withRegistry('', 'dockerhub-creds') {
@@ -37,16 +33,15 @@ pipeline {
     stage('Deploy to Kubernetes with Helm') {
       steps {
         sh """
-        helm upgrade --install taskbloom ./taskbloom-chart \
-          --set backend.image=${BACKEND_IMAGE} \
-          --set backend.tag=${TAG} \
-          --set frontend.image=${FRONTEND_IMAGE} \
-          --set frontend.tag=${TAG}
+          helm upgrade --install taskbloom ./taskbloom-chart \
+            --set backend.image=${BACKEND_IMAGE} \
+            --set backend.tag=${TAG} \
+            --set frontend.image=${FRONTEND_IMAGE} \
+            --set frontend.tag=${TAG}
         """
       }
     }
   }
-<<<<<<< HEAD
 
   post {
     success {
@@ -57,6 +52,3 @@ pipeline {
     }
   }
 }
-=======
-}
->>>>>>> 1f889973eb1219df18dfa25729d281da065f63f6
