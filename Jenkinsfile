@@ -1,19 +1,54 @@
 pipeline {
   agent any
 
+  environment {
+    REGISTRY = "ali-salahuddin"
+    BACKEND_IMAGE = "${REGISTRY}/taskbloom-backend"
+    FRONTEND_IMAGE = "${REGISTRY}/taskbloom-frontend"
+    TAG = "${BUILD_NUMBER}"
+  }
+
   stages {
-    stage('Checkout') {
+
+    stage('Build Docker Images') {
       steps {
-        checkout scm
-        echo '✅ Git checkout successful'
+        script {
+          docker.build("${BACKEND_IMAGE}:${TAG}", "./backend")
+          docker.build("${FRONTEND_IMAGE}:${TAG}", "./frontend")
+        }
       }
     }
 
-    stage('Docker Sanity Check') {
+    stage('Push Docker Images') {
       steps {
-        sh 'docker --version'
-        sh 'docker ps'
+        script {
+          docker.withRegistry('', 'dockerhub-creds') {
+            docker.image("${BACKEND_IMAGE}:${TAG}").push()
+            docker.image("${FRONTEND_IMAGE}:${TAG}").push()
+          }
+        }
       }
+    }
+
+    stage('Deploy to Kubernetes with Helm') {
+      steps {
+        sh """
+        helm upgrade --install taskbloom ./taskbloom-chart \
+          --set backend.image=${BACKEND_IMAGE} \
+          --set backend.tag=${TAG} \
+          --set frontend.image=${FRONTEND_IMAGE} \
+          --set frontend.tag=${TAG}
+        """
+      }
+    }
+  }
+
+  post {
+    success {
+      echo '✅ CI/CD pipeline completed successfully'
+    }
+    failure {
+      echo '❌ CI/CD pipeline failed'
     }
   }
 }
