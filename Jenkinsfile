@@ -9,6 +9,7 @@ pipeline {
   }
 
   stages {
+<<<<<<< HEAD
 
     stage('Build Docker Images') {
       steps {
@@ -20,6 +21,9 @@ pipeline {
     }
 
     stage('Push Docker Images') {
+=======
+    stage('Docker Sanity Check') {
+>>>>>>> 1f889973eb1219df18dfa25729d281da065f63f6
       steps {
         script {
           docker.withRegistry('', 'dockerhub-creds') {
@@ -42,6 +46,7 @@ pipeline {
       }
     }
   }
+<<<<<<< HEAD
 
   post {
     success {
@@ -52,3 +57,6 @@ pipeline {
     }
   }
 }
+=======
+}
+>>>>>>> 1f889973eb1219df18dfa25729d281da065f63f6
