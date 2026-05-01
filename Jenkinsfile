@@ -2,7 +2,7 @@ pipeline {
   agent any
 
   environment {
-    REGISTRY = "ali-salahuddin"
+    REGISTRY = "alisalahuddin"
     BACKEND_IMAGE = "${REGISTRY}/taskbloom-backend"
     FRONTEND_IMAGE = "${REGISTRY}/taskbloom-frontend"
     TAG = "${BUILD_NUMBER}"
