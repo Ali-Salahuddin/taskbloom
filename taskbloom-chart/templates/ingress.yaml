@@ -4,6 +4,7 @@ kind: Ingress
 metadata:
   name: taskbloom-ingress
 spec:
+  ingressClassName: {{ .Values.ingress.className }}
   rules:
     - host: {{ .Values.ingress.host }}
       http:
