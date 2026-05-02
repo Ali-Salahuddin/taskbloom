@@ -1,59 +1,69 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    REGISTRY = "alisalahuddin"
-    BACKEND_IMAGE = "${REGISTRY}/taskbloom-backend"
-    FRONTEND_IMAGE = "${REGISTRY}/taskbloom-frontend"
-    TAG = "${BUILD_NUMBER}"
-  }
-
-  stages {
-
-    stage('Build Docker Images') {
-      steps {
-        script {
-          docker.build("${BACKEND_IMAGE}:${TAG}", "./backend")
-          docker.build("${FRONTEND_IMAGE}:${TAG}", "./frontend")
-        }
-      }
+    environment {
+        REGISTRY = "alisalahuddin"
+        BACKEND_IMAGE = "alisalahuddin/taskbloom-backend"
+        FRONTEND_IMAGE = "alisalahuddin/taskbloom-frontend"
+        TAG = "${BUILD_NUMBER}"
     }
 
-    stage('Push Docker Images') {
-      steps {
-        script {
-          docker.withRegistry('', 'dockerhub-creds') {
-            docker.image("${BACKEND_IMAGE}:${TAG}").push()
-            docker.image("${FRONTEND_IMAGE}:${TAG}").push()
-          }
-        }
-      }
-    }
+    stages {
 
-    stage('Deploy to Kubernetes with Helm') {
-      steps {
-        sh """
-          helm upgrade --install taskbloom ./taskbloom-chart \
-            --set backend.image=${BACKEND_IMAGE} \
-            --set backend.tag=${TAG} \
-            --set frontend.image=${FRONTEND_IMAGE} \
-            --set frontend.tag=${TAG}
+        stage('Build Docker Images') {
+            steps {
+                bat """
+                docker build -t ${BACKEND_IMAGE}:${TAG} backend
+                docker build -t ${FRONTEND_IMAGE}:${TAG} frontend
+                """
+            }
+        }
+
+        stage('Push Docker Images') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'docker-hub-credentials',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    bat """
+                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                    docker push ${BACKEND_IMAGE}:${TAG}
+                    docker push ${FRONTEND_IMAGE}:${TAG}
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to Kubernetes with Helm') {
+    steps {
+        bat """
+        kubectl config current-context
+        helm lint taskbloom-chart
+        helm upgrade --install taskbloom taskbloom-chart ^
+          --namespace taskbloom ^
+          --create-namespace ^
+          --atomic ^
+          --timeout 5m ^
+          --set backend.image.repository=${BACKEND_IMAGE} ^
+          --set backend.image.tag=${TAG} ^
+          --set frontend.image.repository=${FRONTEND_IMAGE} ^
+          --set frontend.image.tag=${TAG}
         """
-      }
     }
-  }
-
-  post {
-    success {
-      echo '✅ CI/CD pipeline completed successfully'
-    }
-    failure {
-      echo '❌ CI/CD pipeline failed'
-    }
-  }
 }
-post {
-  always {
-    cleanWs()
-  }
+
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+        success {
+            echo "✅ CI/CD pipeline completed successfully"
+        }
+        failure {
+            echo "❌ CI/CD pipeline failed"
+        }
+    }
 }
