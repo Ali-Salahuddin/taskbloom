@@ -1,13 +1,15 @@
 frontend:
-  image: task_bloom-frontend
-  tag: latest
+  image:
+    repository: alisalahuddin/taskbloom-frontend
+    tag: latest
   replicas: 2
   service:
     port: 80
 
 backend:
-  image: task_bloom-backend
-  tag: latest
+  image:
+    repository: alisalahuddin/taskbloom-backend
+    tag: latest
   replicas: 2
   service:
     port: 5000
